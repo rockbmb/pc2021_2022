@@ -1,5 +1,5 @@
 /**
- * Banco com sincronização a nível do objeto Bank.
+ * Banco com sincronização a nível de contas individuais, utilizando locks.
  */
 
 import java.util.concurrent.ThreadLocalRandom;
@@ -88,21 +88,25 @@ class Bank {
     public void transfer(int from, int to, int amount) throws InvalidAccount, NotEnoughFunds {
         Account fromAcc = this.get(from);
         Account toAcc = this.get(to);
+        Account lowerAcc, higherAcc;
 
-        fromAcc.lock.lock();
-        try {
-            fromAcc.withdraw(amount);
-            toAcc.lock.lock();
-        } finally {
-            fromAcc.lock.unlock();
+        if (from < to) {
+            lowerAcc = fromAcc;
+            higherAcc = toAcc;
+        } else {
+            lowerAcc = toAcc;
+            higherAcc = fromAcc;
         }
 
         try {
+            lowerAcc.lock.lock();
+            higherAcc.lock.lock();
+            fromAcc.withdraw(amount);
             toAcc.deposit(amount);
         } finally {
-            toAcc.lock.unlock();
+            lowerAcc.lock.unlock();
+            higherAcc.lock.unlock();
         }
-
     }
 }
 
@@ -133,7 +137,7 @@ class Main {
         final int NumContas = Integer.parseInt(args[0]);
         final int NumThreads = Integer.parseInt(args[1]);
         final int iterations = Integer.parseInt(args[2]);
-        Bank b = new Bank(NumContas, 10000000);
+        Bank b = new Bank(NumContas, 1000);
         final Transferer[] ts = new Transferer[NumThreads];
 
         for (int i = 0; i < NumThreads; i++) {
