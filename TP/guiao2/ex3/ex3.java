@@ -8,8 +8,6 @@ class NotEnoughFunds extends Exception {}
 class InvalidAccount extends Exception {}
 
 class Bank {
-    public Account[] accounts;
-
     class Account {
         public Account() {
             this.balance = 0;
@@ -26,6 +24,9 @@ class Bank {
         }
     }
 
+    public Account[] accounts;
+    public static final int saldoInicial = 1000;
+
     public Bank(int accNumber) {
         this.accounts = new Account[accNumber];
         for(int i = 0; i < accNumber; i++) {
@@ -37,7 +38,7 @@ class Bank {
         this.accounts = new Account[accNumber];
         for(int i = 0; i < accNumber; i++) {
             this.accounts[i] = new Account();
-            this.accounts[i].deposit(initBalance);
+            this.accounts[i].deposit(Bank.saldoInicial);
         }
     }
 
@@ -88,8 +89,8 @@ class Bank {
 }
 
 class Transferer extends Thread {
-    int iterations;
-    Bank b;
+    final int iterations;
+    final Bank b;
 
     public Transferer(Bank b, int its) {
         this.b = b;
@@ -109,13 +110,39 @@ class Transferer extends Thread {
     }
 }
 
+class Observer extends Thread {
+    final int iterations;
+    final int numContas;
+    final Bank b;
+
+    public Observer(Bank b, int its, int numCs) {
+        this.b = b;
+        this.iterations = its;
+        this.numContas = numCs;
+    }
+
+    public void run() {
+        try {
+            int [] todasContas = new int[this.numContas];
+            for (int i = 0; i < iterations; i++) {
+                int balance = b.totalBalance(todasContas);
+                if (balance != numContas * Bank.saldoInicial) {
+                    System.out.println("saldo errado: " + balance);
+                }
+            }
+        } catch (Exception e) {}
+    }
+}
+
 class Main {
     public static void main(String[] args) throws InterruptedException, InvalidAccount {
         final int NumContas = Integer.parseInt(args[0]);
         final int NumThreads = Integer.parseInt(args[1]);
         final int iterations = Integer.parseInt(args[2]);
-        Bank b = new Bank(NumContas, 1000);
+        final int observerIterations = Integer.parseInt(args[3]);
+        Bank b = new Bank(NumContas, 0);
         final Transferer[] ts = new Transferer[NumThreads];
+        final Observer obs = new Observer(b, observerIterations, NumContas);
 
         for (int i = 0; i < NumThreads; i++) {
             ts[i] = new Transferer(b, iterations);
@@ -135,6 +162,8 @@ class Main {
         for (Transferer t : ts) {
             t.join();
         }
+        obs.start();
+        obs.join();
 
         for (int j = 0; j < NumContas; j++) {
             System.out.println("Conta " + (j + 1) + " tem saldo: " + b.accounts[j].balance());
