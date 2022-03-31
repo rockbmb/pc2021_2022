@@ -1,34 +1,27 @@
-/**
-import java.util.concurrent.Semaphore;
- */
-
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
 
 class Barreira {
     private final int N;
-    private boolean all_arrived;
+    private boolean waiting_for_previous_group;
     private int c = 0;
 
     Barreira (int N) {
         this.N = N;
-        all_arrived = false;
+        waiting_for_previous_group = false;
     }
 
     public synchronized void await() throws InterruptedException {
-        if (all_arrived) {
-            while (c != 0) {
+        while (waiting_for_previous_group) {
                 this.wait();
-            }
         }
 
         c += 1;
 
         if (c == N) {
-            all_arrived = true;
+            waiting_for_previous_group = true;
             this.notifyAll();
         } else {
-            while (c < N) {
+            while (!waiting_for_previous_group) {
                 this.wait();
             }
         }
@@ -36,10 +29,9 @@ class Barreira {
         c -= 1;
 
         if (c == 0) {
+            waiting_for_previous_group = false;
             this.notifyAll();
-            all_arrived = false;
         }
-
      }
 
 }
@@ -52,11 +44,9 @@ class Runner extends Thread {
     }
 
     public void run() {
-        int low = 800;
-        int high = 2000;
-
+        int low = 1000;
+        int high = 5000;
         boolean bool = true;
-        int ix = 0;
 
         while (bool) {
             Integer elem = ThreadLocalRandom.current().nextInt(low, high);
@@ -71,7 +61,7 @@ class Runner extends Thread {
                 e.printStackTrace();
             }
 
-            bool = false;
+            //bool = false;
         }
     }
 }

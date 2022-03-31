@@ -1,24 +1,43 @@
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
 
 class Barreira {
     private final int N;
-    private int c = 0;
+    private int first_gate;
 
-    Barreira (int N) { this.N = N; }
+    private final Semaphore mut = new Semaphore(1);
+    private final Semaphore sem1 = new Semaphore(0);
+    private final Semaphore sem2 = new Semaphore(1);
 
-    public synchronized void await() throws InterruptedException {
-        c += 1;
+    Barreira (int N) {
+        this.N = N;
+        this.first_gate = 0;
+    }
 
-        if (c == N) {
-            this.notifyAll();
-            //c = 0;
-        } else {
-            while (c < N) {
-                this.wait();
-            }
+    void await() throws InterruptedException {
+        // Think in terms of turnstiles.
+        mut.acquire();
+        first_gate += 1;
+        if (first_gate == N) {
+            sem2.acquire();
+            sem1.release();
         }
-     }
+        mut.release();
 
+        sem1.acquire();
+        sem1.release();
+
+        mut.acquire();
+            first_gate -= 1;
+            if (first_gate == 0) {
+                sem1.acquire();
+                sem2.release();
+            }
+        mut.release();
+
+        sem2.acquire();
+        sem2.release();
+        }
 }
 
 class Runner extends Thread {
@@ -29,8 +48,8 @@ class Runner extends Thread {
     }
 
     public void run() {
-        int low = 1000;
-        int high = 2000;
+        int low = 100;
+        int high = 1000;
 
         boolean bool = true;
 
@@ -46,8 +65,6 @@ class Runner extends Thread {
                 System.out.println("Runner interrompido!");
                 e.printStackTrace();
             }
-
-            bool = false;
         }
     }
 }

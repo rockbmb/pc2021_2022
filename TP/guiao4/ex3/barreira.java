@@ -1,5 +1,5 @@
-/**
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadLocalRandom;
 
 class Barreira {
     private final int N;
@@ -7,65 +7,25 @@ class Barreira {
     private Semaphore mut = new Semaphore(1);
     private Semaphore sem = new Semaphore(0);
 
-
-    Barreira (int N) { this.N = N; }
-
-    void await() throws InterruptedException {
-        mut.acquire();
-        c += 1;
-        if (c == N) {
-            //sem.release(N);
-            for (int i = 0; i < this.N; i++) {
-                sem.release();
-            }
-        }
-        mut.release();
-     }
-
-}
- */
-
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.ThreadLocalRandom;
-
-class Barreira {
-    private final int N;
-    private int first_gate;
-    private int second_gate;
-    private final Semaphore counter = new Semaphore(0);
-    private final Semaphore mut = new Semaphore(1);
-    private final Semaphore sem1 = new Semaphore(0);
-    private final Semaphore sem2 = new Semaphore(1);
-
     Barreira (int N) {
+        c = 0;
         this.N = N;
-        this.first_gate = 0;
-        this.second_gate = 0;
     }
 
     void await() throws InterruptedException {
-        mut.acquire();
-        first_gate += 1;
-        if (first_gate == N) {
-            sem2.acquire();
-            sem1.release();
-        }
-        mut.release();
-
-        sem1.acquire();
-        sem1.release();
+        int temp;
 
         mut.acquire();
-            first_gate -= 1;
-            if (first_gate == 0) {
-                sem1.acquire();
-                sem2.release();
-            }
+        c += 1;
+        temp = c;
         mut.release();
 
-        sem2.acquire();
-        sem2.release();
+        if (temp == N) {
+            sem.release(N - 1);
+        } else {
+            sem.acquire();
         }
+     }
 }
 
 class Runner extends Thread {
@@ -80,7 +40,6 @@ class Runner extends Thread {
         int high = 1000;
 
         boolean bool = true;
-        int ix = 0;
 
         while (bool) {
             Integer elem = ThreadLocalRandom.current().nextInt(low, high);
@@ -94,6 +53,8 @@ class Runner extends Thread {
                 System.out.println("Runner interrompido!");
                 e.printStackTrace();
             }
+
+            bool = false;
         }
     }
 }
