@@ -11,7 +11,6 @@ public class RWLock {
      * Locks e variáveis de condição.
      */
     private final Lock lock = new ReentrantLock();
-
     private final Condition readersCanRead  = lock.newCondition(); 
     private final Condition writersCanWrite = lock.newCondition(); 
 
@@ -31,6 +30,7 @@ public class RWLock {
 
     public void readUnlock() {
         lock.lock();
+
         try {
             readers -= 1;
             if (readers == 0) {
@@ -60,6 +60,12 @@ public class RWLock {
         try {
             writers = false;
             readersCanRead.signal();
+            /**
+             * In case there are no readers waking up to the above signal, writers
+             * can be woken.
+             * In case there are readers, writers wake up, check condition variable,
+             * and go back to slumber.
+             */
             writersCanWrite.signal();
         } finally {
             lock.unlock();

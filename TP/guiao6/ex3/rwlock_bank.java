@@ -51,8 +51,8 @@ class Bank {
 
 
     public int lastId;
-    private final RWLock rwl = new RWLock();
-    //private final IntentRWLock rwl = new IntentRWLock();
+    //private final RWLock rwl = new RWLock();
+    private final IntentRWLock rwl = new IntentRWLock();
 
     public Bank() {
         this.accounts = new HashMap<>();
@@ -305,7 +305,7 @@ class Transferer extends Thread {
             try {
                 this.b.transfer(keysList.get(from), keysList.get(to), 1);
             } catch (InvalidAccount e) {
-                System.out.println("Account has been deleted just before the transfer!");
+                //System.out.println("Account has been deleted just before the transfer!");
             } catch (NotEnoughFunds e) {
                 System.out.println("Account with id " + from + " has insufficient funds!");
             } catch (InterruptedException e) {
