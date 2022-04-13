@@ -54,18 +54,17 @@ class Warehouse2 {
         lock.lock();
 
         try {
-            boolean done = true;
-            test:
+            boolean done = false;
             while(!done) {
+                done = true;
                 for (String name : names) {
                     ItemInfo i = this.get(name);
                     if (i.quantity == 0) {
                         i.item_has_stock.await();
                         done = false;
-                        continue test;
+                        break;
                     }
                 }
-                done = true;
             }
 
             for (String name : names) {
@@ -113,9 +112,9 @@ class Consumer extends Thread {
                 this.wh.consume(ns);
 
                 StringBuilder sb = new StringBuilder();
-                sb.append("Sou o consumidor C-");
+                sb.append("Sou o \033[38;2;255;0;0mconsumidor C-");
                 sb.append(Thread.currentThread().getName());
-                sb.append(" e obtive:\n");
+                sb.append("\033[39m\033[49m e obtive:\n");
                 for(String s : randomSet) {
                     sb.append("\t- item: ");
                     sb.append(s);
@@ -163,9 +162,9 @@ class Supplier extends Thread {
             try {
                 sleep(tempo_producao);
                 StringBuilder sb = new StringBuilder();
-                sb.append("Sou o produtor P-");
+                sb.append("Sou o \033[38;2;0;255;0mprodutor P-");
                 sb.append(Thread.currentThread().getName());
-                sb.append(" e inseri:\n");
+                sb.append("\033[39m\033[49m e inseri:\n");
                 for (Entry<String, Integer> e : items_quants.entrySet()) {
                     this.w.supply(e.getKey(), e.getValue());
                     sb.append("\t- Nome: ");
