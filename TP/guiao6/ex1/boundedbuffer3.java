@@ -1,4 +1,5 @@
 import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -17,6 +18,7 @@ class BoundedBuffer<T> {
     private final Lock lock = new ReentrantLock();
     private final Condition notFull  = lock.newCondition(); 
     private final Condition notEmpty = lock.newCondition(); 
+    public ArrayList<Integer> list = new ArrayList<>();
 
     public BoundedBuffer(Class<T> clazz, int N) {
         this.buffer   = (T[]) Array.newInstance(clazz, N);
